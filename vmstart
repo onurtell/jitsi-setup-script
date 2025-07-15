@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ─── CONFIG ────────────────────────────────────────────────────────────────────
+# Replace with your actual ACR login server name (without .azurecr.io)
+ACR_NAME="rgjitsi-cccff0dxdvarhrh0"
+
+# Path to your docker‑compose setup on the VM
+JITSI_DIR="/opt/jitsi"
+# ────────────────────────────────────────────────────────────────────────────────
+
+echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')] Starting pull-and-run..."
+
+# 1) Log in to your ACR using the VMSS managed identity
+echo "Logging in to ACR: ${ACR_NAME}.azurecr.io"
+az acr login --name "$ACR_NAME"
+
+# 2) Move into your Jitsi directory
+echo "Entering directory: $JITSI_DIR"
+cd "$JITSI_DIR"
+
+# 3) Pull the latest images
+echo "Pulling latest containers from ${ACR_NAME}.azurecr.io..."
+docker-compose pull
+
+# 4) Restart the services
+echo "Stopping existing containers..."
+docker-compose down
+
+echo "Starting containers with updated images..."
+docker-compose up -d
+
+echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')] pull-and-run completed successfully."
